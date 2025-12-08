@@ -8,10 +8,10 @@ import folium
 from folium.plugins import HeatMap
 from datetime import datetime
 
+# ----------------- CONFIG -----------------
+DEFAULT_IMAGE_PATH = "default_farm_image.jpg"
 
-DEFAULT_IMAGE_PATH = "default_farm_image.jpg"  
-
-
+# ----------------- HELPERS -----------------
 def safe_float(val):
     try:
         if val is None or val == "" or str(val).lower() == "nan":
@@ -58,7 +58,6 @@ def get_wttr(city_name: str) -> dict:
         }
     except Exception:
         return {"temperature": None, "windspeed": None, "humidity": None}
-
 
 def get_current_month() -> int:
     return datetime.now().month
@@ -116,11 +115,11 @@ def pest_risk_advice(crop: str, temp_c, humidity):
         msg.append("Whitefly risk — monitor foliage daily.")
     return " ".join(msg) if msg else "Low pest risk now."
 
-
+# ----------------- APP LAYOUT -----------------
 st.set_page_config(page_title="AeroSyn 🌿", layout="wide")
 st.title("AeroSyn — Precision Agronomy")
 
-
+# Background Image
 if os.path.exists(DEFAULT_IMAGE_PATH):
     st.markdown(
         f"""
@@ -147,7 +146,7 @@ crops = ["Paddy (Rice)", "Wheat", "Cotton", "Tomato", "Sugarcane", "Other"]
 selected_crop = st.sidebar.selectbox("Select your crop", crops)
 show_forecast = st.sidebar.checkbox("Show 7-day forecast", value=True)
 
-# Layout
+# Main layout
 col1, col2 = st.columns([2,1])
 open_data = {}
 weather_card = {}
@@ -170,14 +169,13 @@ if coords:
         weather_card["windspeed"] = wt.get("windspeed")
         humidity_series = [wt.get("humidity")]
 
-
+# ----------------- LEFT COLUMN -----------------
 with col1:
     if coords:
         st.markdown("## 🗺 Location")
         st.write(f"📍 **{city}** — {lat:.4f}, {lon:.4f}")
         st.markdown("### 🔥 Temperature Heatmap (approx last 24h)")
 
-        
         if "heat_points" not in st.session_state or st.session_state.get("last_city") != city:
             st.session_state.heat_points = []
             st.session_state.last_city = city
@@ -200,7 +198,7 @@ with col1:
     else:
         st.error("Invalid city — try correcting spelling.")
 
-
+# ----------------- RIGHT COLUMN -----------------
 with col2:
     st.markdown("## 📊 Current Conditions")
     col_t, col_w = st.columns(2)
@@ -221,7 +219,8 @@ with col2:
                 "Precipitation (mm)": daily.get("precipitation_sum", []),
                 "UV Index": daily.get("uv_index_max", []),
             }
-            st.dataframe(df, width='stretch')
+            # ✅ FIXED: dataframe now auto-stretches
+            st.dataframe(df, use_container_width=True)
         else:
             st.info("Forecast not available.")
 
